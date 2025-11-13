@@ -27,22 +27,24 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-app.MapGet("/tasks", async (TaskDb db) =>
+var tasksRoutes = app.MapGroup("/api/tasks");
+
+tasksRoutes.MapGet("/", async (TaskDb db) =>
     await db.Tasks.ToListAsync()
 );
 
-app.MapGet("/tasks/done", async (TaskDb db) =>
+tasksRoutes.MapGet("/done", async (TaskDb db) =>
     await db.Tasks.Where(t => t.Done).ToListAsync()
 );
 
-app.MapGet("/tasks/{id}", async (int id, TaskDb db) =>
+tasksRoutes.MapGet("/{id}", async (int id, TaskDb db) =>
     await db.Tasks.FindAsync(id)
     is Task task
     ? Results.Ok(task)
     : Results.NotFound()
 );
 
-app.MapPost("/tasks", async (Task task, TaskDb db) =>
+tasksRoutes.MapPost("/", async (Task task, TaskDb db) =>
 {
     db.Tasks.Add(task);
     await db.SaveChangesAsync();
@@ -50,7 +52,7 @@ app.MapPost("/tasks", async (Task task, TaskDb db) =>
     return Results.Created($"/tasks/{task.Id}", task);
 });
 
-app.MapPut("/tasks/{id}", async (int id, Task inputTask, TaskDb db) =>
+tasksRoutes.MapPut("/{id}", async (int id, Task inputTask, TaskDb db) =>
 {
     var task = await db.Tasks.FindAsync(id);
 
@@ -64,7 +66,7 @@ app.MapPut("/tasks/{id}", async (int id, Task inputTask, TaskDb db) =>
     return Results.NoContent();
 });
 
-app.MapDelete("/tasks/{id}", async (int id, TaskDb db) =>
+tasksRoutes.MapDelete("/{id}", async (int id, TaskDb db) =>
 {
     if (await db.Tasks.FindAsync(id) is Task task)
     {
