@@ -1,13 +1,10 @@
-using Microsoft.JSInterop.Infrastructure;
-
 var builder = WebApplication.CreateBuilder(args);
 var app = builder.Build();
 
 
-app.MapGet("/hello", () =>
+app.MapGet("/", () =>
 {
-    var message = new WelcomeMessage("Hello Watch");
-    return message;
+    return "Hello";
 })
 .WithName("hello");
 
@@ -33,6 +30,5 @@ app.MapPost("/tasks", () =>
 
 app.Run();
 
-record WelcomeMessage(string Message) { }
 record TasksDTO(int Id, string Tittle, bool Done) { }
 
