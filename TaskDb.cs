@@ -5,5 +5,5 @@ class TaskDb : DbContext
     public TaskDb(DbContextOptions<TaskDb> options)
         : base(options) { }
 
-    public DbSet<Task> Todos => Set<Task>();
+    public DbSet<Task> Tasks => Set<Task>();
 }

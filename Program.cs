@@ -1,4 +1,9 @@
+using Microsoft.EntityFrameworkCore;
+
 var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddDbContext<TaskDb>(opt => opt.UseInMemoryDatabase("TodoList"));
+builder.Services.AddDatabaseDeveloperPageExceptionFilter();
+
 var app = builder.Build();
 
 
@@ -8,19 +13,17 @@ app.MapGet("/", () =>
 })
 .WithName("hello");
 
-app.MapGet("/tasks", () =>
+app.MapGet("/tasks", async (TaskDb db) =>
+    await db.Tasks.ToListAsync()
+);
+
+app.MapPost("/tasks", async (Task task, TaskDb db) =>
 {
-    var t1 = new TasksDTO(1, "Estudar DotNet 10", false);
-    var t2 = new TasksDTO(2, "Estudar Angular 21", false);
-    var t3 = new TasksDTO(3, "Estudar Linux Bash", false);
-    var t4 = new TasksDTO(4, "Estudar Payment wayre", false);
-    var t5 = new TasksDTO(5, "Estudar Inglês técnico", true);
+    db.Tasks.Add(task);
+    await db.SaveChangesAsync();
 
-    var tasks = new[] { t1, t2, t3, t4, t5 };
-
-    return tasks;
-})
-.WithName("GetTasks");
+    return Results.Created($"/tasks/{task.Id}", task);
+});
 
 app.MapPost("/tasks", () =>
 {
