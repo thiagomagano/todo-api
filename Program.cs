@@ -40,38 +40,46 @@ app.Run();
 
 static async Task<IResult> GetAllTasks(TaskDb db)
 {
-    return TypedResults.Ok(await db.Tasks.ToArrayAsync());
+    return TypedResults.Ok(await db.Tasks.Select(x => new TaskDTO(x)).ToArrayAsync());
 }
 
 static async Task<IResult> GetDoneTasks(TaskDb db)
 {
-    return TypedResults.Ok(await db.Tasks.Where(t => t.Done).ToArrayAsync());
+    return TypedResults.Ok(await db.Tasks.Where(t => t.IsDone).Select(x => new TaskDTO(x)).ToArrayAsync());
 }
 
 static async Task<IResult> GetTask(int id, TaskDb db)
 {
     return await db.Tasks.FindAsync(id)
         is Task task
-        ? TypedResults.Ok(task)
+        ? TypedResults.Ok(new TaskDTO(task))
         : TypedResults.NotFound();
 }
 
-static async Task<IResult> CreateTask(Task task, TaskDb db)
+static async Task<IResult> CreateTask(TaskDTO taskDTO, TaskDb db)
 {
+    var task = new Task
+    {
+        IsDone = taskDTO.IsDone,
+        Title = taskDTO.Title
+    };
+
     db.Tasks.Add(task);
     await db.SaveChangesAsync();
 
-    return TypedResults.Created($"/tasks/{task.Id}", task);
+    taskDTO = new TaskDTO(task);
+
+    return TypedResults.Created($"/tasks/{taskDTO.Id}", taskDTO);
 }
 
-static async Task<IResult> UpdateTask(int id, Task inputTask, TaskDb db)
+static async Task<IResult> UpdateTask(int id, TaskDTO taskDTO, TaskDb db)
 {
     var task = await db.Tasks.FindAsync(id);
 
     if (task is null) return Results.NotFound();
 
-    task.Title = inputTask.Title;
-    task.Done = inputTask.Done;
+    task.Title = taskDTO.Title;
+    task.IsDone = taskDTO.IsDone;
 
     await db.SaveChangesAsync();
 
