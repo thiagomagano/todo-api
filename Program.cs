@@ -27,32 +27,44 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-var tasksRoutes = app.MapGroup("/api/tasks");
+var apiTasks = app.MapGroup("/api/tasks");
 
-tasksRoutes.MapGet("/", async (TaskDb db) =>
-    await db.Tasks.ToListAsync()
-);
+apiTasks.MapGet("/", GetAllTasks);
+apiTasks.MapGet("/done", GetDoneTasks);
+apiTasks.MapGet("/{id}", GetTask);
+apiTasks.MapPost("/", CreateTask);
+apiTasks.MapPut("/{id}", UpdateTask);
+apiTasks.MapDelete("/{id}", DeleteTask);
 
-tasksRoutes.MapGet("/done", async (TaskDb db) =>
-    await db.Tasks.Where(t => t.Done).ToListAsync()
-);
+app.Run();
 
-tasksRoutes.MapGet("/{id}", async (int id, TaskDb db) =>
-    await db.Tasks.FindAsync(id)
-    is Task task
-    ? Results.Ok(task)
-    : Results.NotFound()
-);
+static async Task<IResult> GetAllTasks(TaskDb db)
+{
+    return TypedResults.Ok(await db.Tasks.ToArrayAsync());
+}
 
-tasksRoutes.MapPost("/", async (Task task, TaskDb db) =>
+static async Task<IResult> GetDoneTasks(TaskDb db)
+{
+    return TypedResults.Ok(await db.Tasks.Where(t => t.Done).ToArrayAsync());
+}
+
+static async Task<IResult> GetTask(int id, TaskDb db)
+{
+    return await db.Tasks.FindAsync(id)
+        is Task task
+        ? TypedResults.Ok(task)
+        : TypedResults.NotFound();
+}
+
+static async Task<IResult> CreateTask(Task task, TaskDb db)
 {
     db.Tasks.Add(task);
     await db.SaveChangesAsync();
 
-    return Results.Created($"/tasks/{task.Id}", task);
-});
+    return TypedResults.Created($"/tasks/{task.Id}", task);
+}
 
-tasksRoutes.MapPut("/{id}", async (int id, Task inputTask, TaskDb db) =>
+static async Task<IResult> UpdateTask(int id, Task inputTask, TaskDb db)
 {
     var task = await db.Tasks.FindAsync(id);
 
@@ -63,21 +75,17 @@ tasksRoutes.MapPut("/{id}", async (int id, Task inputTask, TaskDb db) =>
 
     await db.SaveChangesAsync();
 
-    return Results.NoContent();
-});
+    return TypedResults.NoContent();
+}
 
-tasksRoutes.MapDelete("/{id}", async (int id, TaskDb db) =>
+static async Task<IResult> DeleteTask(int id, TaskDb db)
 {
     if (await db.Tasks.FindAsync(id) is Task task)
     {
         db.Tasks.Remove(task);
         await db.SaveChangesAsync();
-        return Results.NoContent();
+        return TypedResults.NoContent();
     }
 
-    return Results.NotFound();
-});
-
-
-app.Run();
-
+    return TypedResults.NotFound();
+}
