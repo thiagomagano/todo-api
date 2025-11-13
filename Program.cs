@@ -31,6 +31,17 @@ app.MapGet("/tasks", async (TaskDb db) =>
     await db.Tasks.ToListAsync()
 );
 
+app.MapGet("/tasks/done", async (TaskDb db) =>
+    await db.Tasks.Where(t => t.Done).ToListAsync()
+);
+
+app.MapGet("/tasks/{id}", async (int id, TaskDb db) =>
+    await db.Tasks.FindAsync(id)
+    is Task task
+    ? Results.Ok(task)
+    : Results.NotFound()
+);
+
 app.MapPost("/tasks", async (Task task, TaskDb db) =>
 {
     db.Tasks.Add(task);
