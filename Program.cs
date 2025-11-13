@@ -4,14 +4,28 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<TaskDb>(opt => opt.UseInMemoryDatabase("TodoList"));
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
+
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddOpenApiDocument(config =>
+{
+    config.DocumentName = "TaskAPI";
+    config.Title = "TaskAPI v1";
+    config.Version = "v1";
+});
+
 var app = builder.Build();
 
-
-app.MapGet("/", () =>
+if (app.Environment.IsDevelopment())
 {
-    return "Hello";
-})
-.WithName("hello");
+    app.UseOpenApi();
+    app.UseSwaggerUi(config =>
+    {
+        config.DocumentTitle = "TodoAPI";
+        config.Path = "/swagger";
+        config.DocumentPath = "/swagger/{documentName}/swagger.json";
+        config.DocExpansion = "list";
+    });
+}
 
 app.MapGet("/tasks", async (TaskDb db) =>
     await db.Tasks.ToListAsync()
@@ -25,13 +39,5 @@ app.MapPost("/tasks", async (Task task, TaskDb db) =>
     return Results.Created($"/tasks/{task.Id}", task);
 });
 
-app.MapPost("/tasks", () =>
-{
-    return "TASK CRIADA";
-})
-.WithName("PostTasks");
-
 app.Run();
-
-record TasksDTO(int Id, string Tittle, bool Done) { }
 
